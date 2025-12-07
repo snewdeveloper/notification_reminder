@@ -14,12 +14,4 @@ import 'package:notification_reminder_flutter/notification_reminder_flutter.dart
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-
-  testWidgets('getPlatformVersion test', (WidgetTester tester) async {
-    final NotificationReminderFlutter plugin = NotificationReminderFlutter();
-    final String? version = await plugin.getPlatformVersion();
-    // The version string depends on the host platform running the test, so
-    // just assert that some non-empty string is returned.
-    expect(version?.isNotEmpty, true);
-  });
 }

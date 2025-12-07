@@ -1,4 +1,4 @@
-package com.greenlime.notification_reminder_flutter.ui
+package com.greenlime.notification_reminder_flutter
 
 
 import android.content.Intent

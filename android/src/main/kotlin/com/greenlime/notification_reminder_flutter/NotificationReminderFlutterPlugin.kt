@@ -1,22 +1,35 @@
 package com.greenlime.notification_reminder_flutter
 
+import Constants.REMINDER_CHANNEL
+import android.Manifest
 import android.app.Activity
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
+import com.greenlime.notification_reminder_flutter.utils.TopicPref
 import android.os.Build
+import android.provider.Settings
+import android.util.Log
+import androidx.core.app.ActivityCompat.requestPermissions
+import androidx.core.net.toUri
+import com.google.firebase.messaging.FirebaseMessaging
 import com.greenlime.notification_reminder_flutter.managers.KillerManager
-import com.greenlime.notification_reminder_flutter.receiver.ReminderReceiver.Companion.CHANNEL_ID
 import com.greenlime.notification_reminder_flutter.utils.BatteryOptimizationUtil
+import com.greenlime.notification_reminder_flutter.utils.Constants.CHANNEL_ID
+import com.greenlime.notification_reminder_flutter.utils.Constants.FIREBASE_TOPIC_EMPLOYEES_NOTIFICATION_REMINDER
 import com.greenlime.notification_reminder_flutter.utils.PrefKeys
 import com.greenlime.notification_reminder_flutter.utils.PrefUtils
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import kotlinx.coroutines.channels.Channel
+import java.lang.Exception
 
 /** NotificationReminderFlutterPlugin */
 class NotificationReminderFlutterPlugin :
@@ -32,12 +45,20 @@ class NotificationReminderFlutterPlugin :
     private var activity: Activity? = null
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        channel = MethodChannel(flutterPluginBinding.binaryMessenger, "notification_reminder_flutter")
-        channel.setMethodCallHandler(this)
+        channel =
+            MethodChannel(flutterPluginBinding.binaryMessenger, "notification_reminder_flutter")
+//        activity = flutterPluginBinding.activity
+//        context = activity!!.applicationContext
+//        createNotificationChannel(flutterPluginBinding.applicationContext)
+
+    }
+
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
         context = activity!!.applicationContext
-        createNotificationChannel(flutterPluginBinding.applicationContext)
+        channel.setMethodCallHandler(this)
     }
+
 
     override fun onDetachedFromActivityForConfigChanges() {
         activity = null
@@ -94,9 +115,22 @@ class NotificationReminderFlutterPlugin :
                 )
                 result.success(true)
             }
-
+             "subscribeUserToTopicOnce" -> {
+                 createNotificationChannel(context)
+                 subscribeUserToTopicOnce()
+                result.success(true)
+            }
+            "requestBasicPermissions" -> {
+                requestBasicPermissions(context)
+                result.success(true)
+            }
             "isAutoStartEnabled" -> result.success(getManAutoStart())
-            "isBatteryOptimizationDisabled" -> result.success(BatteryOptimizationUtil.isIgnoringBatteryOptimizations(context))
+            "isBatteryOptimizationDisabled" -> result.success(
+                BatteryOptimizationUtil.isIgnoringBatteryOptimizations(
+                    context
+                )
+            )
+
             "isManBatteryOptimizationDisabled" -> result.success(getManBatteryOptimization())
             "isAllOptimizationsDisabled" ->
                 result.success(
@@ -115,10 +149,12 @@ class NotificationReminderFlutterPlugin :
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
     }
-    private fun createNotificationChannel(context: Context) {
+
+     fun createNotificationChannel(context: Context) {
+        Log.d("NotificationReminderFlutterPlugin", "Notification channel entering creation block")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                CHANNEL_ID,
+                REMINDER_CHANNEL,
                 "Reminder Channel",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
@@ -129,8 +165,61 @@ class NotificationReminderFlutterPlugin :
             }
             val nm = context.getSystemService(NotificationManager::class.java)
             nm.createNotificationChannel(channel)
+            Log.d("NotificationReminderFlutterPlugin", "Notification channel created")
         }
     }
+
+    fun requestBasicPermissions(context: Context) {
+       activity?.let {
+           if (Build.VERSION.SDK_INT >= 33) {
+               requestPermissions(
+                   activity!!,
+                   arrayOf(
+                       Manifest.permission.POST_NOTIFICATIONS,
+                       Manifest.permission.USE_EXACT_ALARM,
+                       Manifest.permission.SCHEDULE_EXACT_ALARM,
+                   ),
+                   101
+               )
+           }
+           if (Build.VERSION.SDK_INT >= 34) {
+               val intent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+                   data = "package:${context.packageName}".toUri()
+                   flags = Intent.FLAG_ACTIVITY_NEW_TASK
+               }
+               context.startActivity(intent)
+           }
+       }
+    }
+    fun subscribeUserToTopicOnce() {
+        // If already subscribed, do nothing
+        try {
+            if (TopicPref.isReminderSubscribed(context)) {
+                Log.d(
+                    "FCM",
+                    "Already subscribed to topic: $FIREBASE_TOPIC_EMPLOYEES_NOTIFICATION_REMINDER"
+                )
+                return
+            }
+
+            FirebaseMessaging.getInstance()
+                .subscribeToTopic(FIREBASE_TOPIC_EMPLOYEES_NOTIFICATION_REMINDER)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        Log.d(
+                            "FCM",
+                            "Topic subscription SUCCESS: $FIREBASE_TOPIC_EMPLOYEES_NOTIFICATION_REMINDER"
+                        )
+                        TopicPref.setReminderSubscribed(context, true)   // mark as subscribed
+                    } else {
+                        Log.e("FCM", "Topic subscription FAILED: ${task.exception?.message}")
+                    }
+                }
+        } catch (e: Exception) {
+            Log.e("FCM", "Exception: ${e.message}")
+        }
+    }
+
     // ✅ Battery Optimization Functions (Merged)
 
     private fun showAutoStart(title: String, msg: String) {

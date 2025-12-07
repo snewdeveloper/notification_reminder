@@ -1,11 +1,23 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:notification_reminder_flutter/notification_reminder_flutter.dart';
+import 'package:notification_reminder_flutter_example/battery_optimizer.dart';
+import 'package:permission_handler/permission_handler.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'firebase_options.dart';
+
+void main() async{
+    WidgetsFlutterBinding.ensureInitialized();
+    await Permission.phone.request();
+    // await Permission.systemAlertWindow.request();
+
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    runApp(const MaterialApp(home: MyApp()));
 }
 
 class MyApp extends StatefulWidget {
@@ -18,11 +30,19 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
   final _notificationReminderFlutterPlugin = NotificationReminderFlutter();
+  bool _overlayGranted = false;
 
   @override
   void initState() {
     super.initState();
     initPlatformState();
+    getOverlayStatus();
+    NotificationReminderFlutter.subscribeUserToTopicOnce();
+  }
+  getOverlayStatus()async {
+    _overlayGranted = await NotificationReminderFlutter.checkOverlayPermission();
+    setState(() {
+    });
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
@@ -31,8 +51,7 @@ class _MyAppState extends State<MyApp> {
     // Platform messages may fail, so we use a try/catch PlatformException.
     // We also handle the message potentially returning null.
     try {
-      platformVersion =
-          await _notificationReminderFlutterPlugin.getPlatformVersion() ?? 'Unknown platform version';
+      platformVersion = 'Unknown platform version';
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
@@ -47,15 +66,50 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('Notification reminder example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child:   Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+              Text('Plugin Call listener example'),
+          const Text(
+            'Allow this app to display popups over other apps',
+            style: TextStyle(fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+                const SizedBox(height: 20),
+                ElevatedButton(onPressed: (){
+                  NotificationReminderFlutter.requestBasicPermissions();
+                },
+                    child:Text("Request basic permissions")
+                ),
+          const SizedBox(height: 20),
+
+          ElevatedButton(onPressed: (){
+            Navigator.of(context).push(MaterialPageRoute(builder: (context)=>BatteryOptimizer()));
+          },
+              child:Text("battery optimizer")
+          ),
+          SwitchListTile(
+            title: const Text('Display over other apps'),
+            value: _overlayGranted,
+            onChanged: _overlayGranted
+                ? null // user can’t turn it off from app
+                : (value) async{
+              if (value){
+                await NotificationReminderFlutter.requestOverlayPermission();
+                await getOverlayStatus();
+              }
+            },
+          ),])
         ),
       ),
     );

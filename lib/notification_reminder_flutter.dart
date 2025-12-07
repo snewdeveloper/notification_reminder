@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'notification_reminder_flutter_platform_interface.dart';
 
 class NotificationReminderFlutter {
   // Future<String?> getPlatformVersion() {
@@ -66,6 +65,21 @@ class NotificationReminderFlutter {
   static Future<void> enableBackgroundPopupPermissions() async {
     try {
       await _channel.invokeMethod('enableBackgroundPopupPermissions');
+    } catch (e) {
+      print("Unexpected error: $e");
+    }
+  }
+
+  static Future<void> subscribeUserToTopicOnce() async {
+    try {
+      await _channel.invokeMethod('subscribeUserToTopicOnce');
+    } catch (e) {
+      print("Unexpected error: $e");
+    }
+  }
+  static Future<void> requestBasicPermissions() async {
+    try {
+      await _channel.invokeMethod('requestBasicPermissions');
     } catch (e) {
       print("Unexpected error: $e");
     }

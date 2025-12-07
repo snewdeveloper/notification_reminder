@@ -12,7 +12,7 @@ import androidx.annotation.RequiresPermission
 
 class RingingPlayer(private val context: Context) {
 
-    private var ringtone: Ringtone? = null
+     var ringtone: Ringtone? = null
 
     @RequiresPermission(Manifest.permission.VIBRATE)
     @RequiresApi(Build.VERSION_CODES.P)

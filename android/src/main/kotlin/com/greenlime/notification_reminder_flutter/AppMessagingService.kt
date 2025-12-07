@@ -1,4 +1,4 @@
-package com.greenlime.notification_reminder_flutter.services
+package com.greenlime.notification_reminder_flutter
 
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -12,7 +12,7 @@ import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.greenlime.notification_reminder_flutter.R
-import com.greenlime.notification_reminder_flutter.ui.FullScreenReminderActivity
+import com.greenlime.notification_reminder_flutter.FullScreenReminderActivity
 
 class AppFirebaseMessagingService : FirebaseMessagingService() {
 
@@ -43,13 +43,13 @@ class AppFirebaseMessagingService : FirebaseMessagingService() {
                                              reminderId: String) {
 
         val intent = Intent(this, FullScreenReminderActivity::class.java)
-            .apply {
+//            .apply {
 //            Intent.setFlags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
 //            Intent.putExtra("audio_url", audioUrl)
 //            Intent.putExtra("title", title)
 //            Intent.putExtra("description", description)
 //            Intent.putExtra("reminder_id", reminderId)
-        }
+//        }
           intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             intent.putExtra("audio_url", audioUrl)
             intent.putExtra("title", title)
@@ -80,7 +80,8 @@ class AppFirebaseMessagingService : FirebaseMessagingService() {
                                    description: String,
                                    audioUrl: String,
                                    reminderId: String) {
-        val popupIntent = Intent(this, FullScreenReminderActivity::class.java).apply {
+        val popupIntent = Intent(this, FullScreenReminderActivity::class.java)
+//            .apply {
 //            Intent.setFlags = Intent.FLAG_ACTIVITY_NEW_TASK
 //            Intent.putExtra("audio_url", audioUrl)
 //            Intent.putExtra("title", title)
@@ -88,7 +89,7 @@ class AppFirebaseMessagingService : FirebaseMessagingService() {
 //            Intent.putExtra("reminder_id", reminderId)
 
 
-        }
+//        }
          popupIntent.flags =  Intent.FLAG_ACTIVITY_NEW_TASK
          popupIntent.putExtra("audio_url", audioUrl)
          popupIntent.putExtra("title", title)

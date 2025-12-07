@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.greenlime.notification_reminder_flutter">
+    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -23,5 +24,34 @@
     <application
         >
 
+
+<!--        <activity-->
+<!--            android:name=".FullScreenReminderActivity"-->
+<!--            android:excludeFromRecents="true"-->
+<!--            android:exported="true"-->
+<!--            android:launchMode="singleTop"-->
+<!--            android:screenOrientation="portrait"-->
+<!--            android:showOnLockScreen="true"-->
+<!--            android:turnScreenOn="true"-->
+<!--            />-->
+        <activity
+            android:name=".FullscreenReminderActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@style/ReminderFullScreenTheme"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:allowEmbedded="false">
+            </activity>
+
+        <service
+            android:name=".AppFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>
